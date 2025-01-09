@@ -7,6 +7,7 @@ const server = net.createServer((socket) => {
     clients.forEach((client) => {
         if (client !== socket) {
             client.write('A new client has connected\n');
+            fs.createWriteStream('server.log', { flags: 'a' }).write("A new client has connected\n");
         }
         console.log("Client list:" + clients)
     });
@@ -15,14 +16,17 @@ const server = net.createServer((socket) => {
         clients.forEach((client) => {
             if (client !== socket) {
                 client.write(data);
+                fs.createWriteStream('server.log', { flags: 'a' }).write(data);
             }
         });
     });
     socket.on('end', () => {
         console.log('A client disconnected');
         const index = clients.indexOf(socket);
+        fs.createWriteStream('server.log', { flags: 'a' }).write("A client has disconnected\n");
         if (index !== -1) {
             clients.splice(index, 1);
+            
         }
         clients.forEach((client) => {
             client.write('A client has disconnected\n');

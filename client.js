@@ -3,6 +3,9 @@ const fs = require('fs');
 const client = net.createConnection({ port: 3000 }, () => {
     console.log('Connected to server');
 });
+client.on('connect', () => {
+    
+});
 client.on('data', (data) => {
     console.log(data.toString().trim());
 });
