@@ -1,4 +1,8 @@
-heywassuphow you doingA new client has connected
-A new client has connected
-A new client has connected
-A client has disconnected
+Server started on port 3000
+Client1 connected
+Client2 connected
+Client1: hey
+Client2: sup. wanna get bk later?
+Client1: ew no wtf
+Client1 disconnected
+Client2 disconnected

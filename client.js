@@ -1,16 +1,20 @@
 const net = require('net');
-const fs = require('fs');
+const clients = [];
 const client = net.createConnection({ port: 3000 }, () => {
     console.log('Connected to server');
 });
 client.on('connect', () => {
-    
+    console.log('Connection established. Start chatting!');
 });
 client.on('data', (data) => {
-    console.log(data.toString().trim());
+    console.log('Server:', data.toString().trim());
 });
 client.on('end', () => {
     console.log('Disconnected from server');
+    process.exit(0);
+});
+client.on('error', (err) => {
+    console.error('Connection error:', err.message);
 });
 const userInput = process.stdin;
 userInput.setEncoding('utf-8');
