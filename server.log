@@ -1,8 +1,17 @@
-Server started on port 3000
-Client1 connected
-Client2 connected
-Client1: hey
-Client2: sup. wanna get bk later?
-Client1: ew no wtf
-Client1 disconnected
-Client2 disconnected
+[2025-01-17T17:31:32.373Z] Server started listening on port 3000
+[2025-01-17T17:31:38.181Z] Guest1 connected
+[2025-01-17T17:31:38.181Z] Broadcast: Guest1 has joined the chat
+[2025-01-17T17:31:43.054Z] Guest2 connected
+[2025-01-17T17:31:43.054Z] Broadcast: Guest2 has joined the chat
+[2025-01-17T17:31:48.731Z] Guest3 connected
+[2025-01-17T17:31:48.732Z] Broadcast: Guest3 has joined the chat
+[2025-01-17T17:31:51.223Z] Broadcast: Guest1: ey
+[2025-01-17T17:31:51.223Z] Guest1: ey
+[2025-01-17T17:32:14.976Z] Guest2 whispered to Guest3: i dont like that guest1 guy
+[2025-01-17T17:32:25.027Z] Broadcast: Guest1 has changed their name to john
+[2025-01-17T17:32:25.027Z] Guest1 changed their username to john
+[2025-01-17T17:32:44.205Z] Guest2 requested the client list.
+[2025-01-17T17:33:00.942Z] Broadcast: john has been kicked from the server.
+[2025-01-17T17:33:00.942Z] Guest3 kicked john from the server.
+[2025-01-17T17:33:10.119Z] Error with Guest3: read ECONNRESET
+[2025-01-17T17:33:11.320Z] Error with Guest2: read ECONNRESET

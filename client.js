@@ -1,10 +1,17 @@
 const net = require('net');
-const clients = [];
+const args = process.argv.slice(2);
+const command = args[0];
+const target = args[1];
+const whisperMessage = args.slice(2).join(' ');
 const client = net.createConnection({ port: 3000 }, () => {
     console.log('Connected to server');
 });
 client.on('connect', () => {
     console.log('Connection established. Start chatting!');
+    if (command === '/w' && target && whisperMessage) {
+        client.write(`/w ${target} ${whisperMessage}`);
+        console.log(`Whisper to ${target}: ${whisperMessage}`);
+    }
 });
 client.on('data', (data) => {
     console.log('Server:', data.toString().trim());

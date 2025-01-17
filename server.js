@@ -1,62 +1,96 @@
 const net = require('net');
 const fs = require('fs');
-const logStream = fs.createWriteStream('server.log', { flags: 'a' });
-const clients = [];
-let clientId = 1;
-const server = net.createServer((socket) => {
-    const clientName = `Client${clientId++}`;
-    console.log(`${clientName} connected`);
-    logStream.write(`${clientName} connected\n`);
-    clients.push({ socket, name: clientName });
-    clients.forEach((client) => {
-        if (client.socket !== socket) {
-            try {
-                client.socket.write(`[SYSTEM] ${clientName} has joined the chat\n`);
-            } catch (err) {
-                console.error(`Error broadcasting join message: ${err.message}`);
-            }
+const clients = {};
+const adminPassword = 'supersecretpw';
+const logFile = 'server.log';
+function logMessage(message) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}\n`;
+    fs.appendFile(logFile, logEntry, (err) => {
+        if (err) {
+            console.error('Failed to write to log file:', err.message);
         }
     });
+}
+const server = net.createServer((socket) => {
+    let username = `Guest${Object.keys(clients).length + 1}`;
+    clients[username] = socket;
+    logMessage(`${username} connected`);
+    broadcast(`${username} has joined the chat`);
+    console.log(`${username} connected`);
     socket.on('data', (data) => {
-        const message = `${clientName}: ${data.toString().trim()}`;
-        console.log(message);
-        logStream.write(message + '\n');
-        clients.forEach((client) => {
-            if (client.socket !== socket) {
-                try {
-                    client.socket.write(message + '\n');
-                } catch (err) {
-                    console.error(`Error broadcasting message: ${err.message}`);
-                }
+        const message = data.toString().trim();
+        if (message.startsWith('/w ')) {
+            const [, target, ...msgParts] = message.split(' ');
+            const privateMessage = msgParts.join(' ');
+            if (clients[target]) {
+                clients[target].write(`[Whisper from ${username}]: ${privateMessage}`);
+                socket.write(`[Whisper to ${target}]: ${privateMessage}`);
+                logMessage(`${username} whispered to ${target}: ${privateMessage}`);
+            } else {
+                socket.write(`Error: User ${target} not found.`);
+                logMessage(`${username} failed to whisper to ${target}: User not found.`);
             }
-        });
+        } else if (message.startsWith('/username ')) {
+            const [, newUsername] = message.split(' ');
+            if (!newUsername) {
+                socket.write('Error: Username cannot be empty.');
+                logMessage(`${username} failed to update their username: Empty username.`);
+            } else if (clients[newUsername]) {
+                socket.write('Error: Username is already in use.');
+                logMessage(`${username} failed to update their username: Username already in use.`);
+            } else {
+                const oldUsername = username;
+                delete clients[username];
+                username = newUsername;
+                clients[username] = socket;
+                broadcast(`${oldUsername} has changed their name to ${username}`);
+                socket.write(`Your username has been updated to ${username}.`);
+                logMessage(`${oldUsername} changed their username to ${username}`);
+            }
+        } else if (message.startsWith('/kick ')) {
+            const [, target, password] = message.split(' ');
+            if (password !== adminPassword) {
+                socket.write('Error: Incorrect admin password.');
+                logMessage(`${username} failed to kick ${target}: Incorrect admin password.`);
+            } else if (clients[target]) {
+                clients[target].write('You have been kicked from the server.');
+                clients[target].destroy();
+                delete clients[target];
+                broadcast(`${target} has been kicked from the server.`);
+                logMessage(`${username} kicked ${target} from the server.`);
+            } else {
+                socket.write(`Error: User ${target} not found.`);
+                logMessage(`${username} failed to kick ${target}: User not found.`);
+            }
+        } else if (message === '/clientlist') {
+            const clientList = Object.keys(clients).join(', ');
+            socket.write(`Connected clients: ${clientList}`);
+            logMessage(`${username} requested the client list.`);
+        } else {
+            broadcast(`${username}: ${message}`, socket);
+            logMessage(`${username}: ${message}`);
+        }
     });
     socket.on('end', () => {
-        console.log(`${clientName} disconnected`);
-        logStream.write(`${clientName} disconnected\n`);
-        const index = clients.findIndex((client) => client.socket === socket);
-        if (index !== -1) clients.splice(index, 1);
-        clients.forEach((client) => {
-            try {
-                client.socket.write(`[SYSTEM] ${clientName} has left the chat\n`);
-            } catch (err) {
-                console.error(`Error broadcasting leave message: ${err.message}`);
-            }
-        });
+        delete clients[username];
+        broadcast(`${username} has left the chat`);
+        logMessage(`${username} disconnected`);
     });
     socket.on('error', (err) => {
-        console.error(`Error with ${clientName}: ${err.message}`);
-        logStream.write(`Error with ${clientName}: ${err.message}\n`);
+        console.error(`Error with ${username}: ${err.message}`);
+        logMessage(`Error with ${username}: ${err.message}`);
     });
 });
-process.on('SIGINT', () => {
-    console.log('Server shutting down...');
-    logStream.write('Server shutting down...\n');
-    logStream.end(() => {
-        process.exit();
+function broadcast(message, senderSocket = null) {
+    Object.values(clients).forEach((clientSocket) => {
+        if (clientSocket !== senderSocket) {
+            clientSocket.write(message);
+        }
     });
-});
+    logMessage(`Broadcast: ${message}`);
+}
 server.listen(3000, () => {
     console.log('Server is listening on port 3000');
-    logStream.write('Server started on port 3000\n');
+    logMessage('Server started listening on port 3000');
 });
